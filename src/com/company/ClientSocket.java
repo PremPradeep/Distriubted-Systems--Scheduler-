@@ -1,21 +1,27 @@
 package com.company;
 
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 
-// Class for implementing socket communication capability for the scheduling client.
+// Class for implementing the client side communication for the project.
 public class ClientSocket {
+
     //Host name and communication port for socket communication.
     private String hostName;
     private int port;
     private boolean running;
 
     // Data structures
-    //XML STRUCT
     private ArrayList<String[]> resourceList;
     private ArrayList<String[]> serverJobList;
-
+    private ArrayList<String[]> systemXML;
 
     // Java Socket communication object.
     private Socket client;
@@ -26,10 +32,13 @@ public class ClientSocket {
 
     // Constructor that instantiates the input and output streams as well as connecting to the server.
     public ClientSocket (String hostName, int port){
+
+        // Sets the client as running and specifying the hostname and port to connect over.
         this.running = true;
         this.hostName = hostName;
         this.port = port;
 
+        // Opens the socket connection and created the input and output data streams.
         try {
             client = new Socket (hostName, port);
             outC = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
@@ -74,27 +83,36 @@ public class ClientSocket {
         }
     }
 
+    // Main function for running the client and scheduling jobs.
     public void runClient (){
+
+        // Initial authentication protocol
         this.sendMessage("HELO");
-        this.readMessage();
+        if (this.readMessage().equals("HELO")){
+            this.sendMessage("AUTH nicholas");
 
-        this.sendMessage("AUTH Group_Two");
+            // Parses the system.xml into a data structure to allow for identification of server resources.
+            this.readXML();
 
-        //XML PARSING GOES HERE
+            // Loop to iterate over the job requests and parse them accordingly.
+            while (this.running){
 
-        while (this.running){
-            this.readMessage();
-            this.sendMessage("REDY");
-
-            this.jobSchedule();
+                // Reads the "OK" message from the server and responds with "REDY".
+                if(this.readMessage().equals("OK")) {
+                    this.sendMessage("REDY");
+                    this.jobSchedule();
+                }
+            }
         }
-
     }
 
+    // Job scheduling function responsible for parsing messages related to jobs.
     private void jobSchedule(){
 
+        // Takes the inital job request and splits on whitespace into an array of strings.
         String[] jobInfo = this.readMessage().split("\\s+");
 
+        // If the server has sent "NONE" responds with "QUIT" and closes the connection and terminates the client.
         if (jobInfo[0].equals("NONE")) {
             this.sendMessage("QUIT");
             if(this.readMessage().equals("QUIT")){
@@ -104,25 +122,26 @@ public class ClientSocket {
 
         } else {
             if (jobInfo[0].equals("JOBN")) {
-                this.sendMessage("RESC All");
 
-                this.resourceList = createDataStruct();
+                // Code currently not used due to not requiring it for allocateToLargest algorithm with it adding a
+                // considerable amount of additional computing time, but is here for implementation for later
+                // algorithms. Requests all server resources and lists all active jobs on a specific server.
 
-                // ALGORITHM TO CHOOSE SERVER GOES HERE
+                //this.sendMessage("RESC All");
+                //this.resourceList = createDataStruct();
+                //this.sendMessage("LSTJ <server type> <server number>);
+                //this.serverJobList = createDataStruct();
 
-                // needs "LSTJ <server type> <server number>"
-                this.sendMessage("LSTJ large 0");
+                // Determines the largest server based on the system.xml.
+                String serverType = findLargestServer();
 
-                this.serverJobList = createDataStruct();
-
-                // ALGORITHM FOR SCHEDULING DECISION GOES HERE
-
-                // needs "SCHD <job number> <server type> <server number>"
-                this.sendMessage("SCHD " + jobInfo[2] + " large 0");
+                // Schedules the current job on the first largest server available (i.e server with ID 0).
+                this.sendMessage("SCHD " + jobInfo[2] + " " + serverType + " 0");
             }
         }
     }
 
+    // Parses data sent from the server into an arraylist of string arrays for use in algorithm.
     private ArrayList<String[]> createDataStruct() {
         ArrayList<String[]> result = new ArrayList<String[]>();
 
@@ -143,5 +162,52 @@ public class ClientSocket {
             }
         }
         return result;
+    }
+
+    // Reads in the system.xml using the SAX parser and stores the information in an arraylist of string arrays.
+    private void readXML(){
+        systemXML = new ArrayList<String[]>();
+        try {
+            int index = 0;
+            SAXParserFactory fact = SAXParserFactory.newInstance();
+            SAXParser saxParser = fact.newSAXParser();
+
+            DefaultHandler handle = new DefaultHandler() {
+
+                @Override
+                public void startElement(String uri, String localName,
+                                         String qName, Attributes attributes) throws SAXException {
+
+                    String[] temp = new String[7];
+
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        temp[i] = attributes.getValue(i);
+                    }
+                    if (qName.equals("server")){
+                        systemXML.add(temp);
+                    }
+                }
+            };
+
+            saxParser.parse("system.xml", handle);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    // Algorithm to find the largest server by iterating over the system.xml file based on the server core count
+    // (measurement of how large the server is) and returns the type of the largest server.
+    private String findLargestServer(){
+
+        int currentSize = 0;
+        String type = "";
+
+        for (int i = 0; i < systemXML.size(); i++){
+            if (Integer.parseInt(systemXML.get(i)[4]) > currentSize){
+                currentSize = Integer.parseInt(systemXML.get(i)[4]);
+                type = systemXML.get(i)[0];
+            }
+        }
+        return type;
     }
 }
