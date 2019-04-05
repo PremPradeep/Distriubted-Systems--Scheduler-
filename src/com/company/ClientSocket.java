@@ -88,7 +88,7 @@ public class ClientSocket {
 
         // Initial authentication protocol
         this.sendMessage("HELO");
-        if (this.readMessage().equals("HELO")){
+        if (this.readMessage().equals("OK")){
             this.sendMessage("AUTH nicholas");
 
             // Parses the system.xml into a data structure to allow for identification of server resources.
@@ -208,6 +208,7 @@ public class ClientSocket {
                 type = systemXML.get(i)[0];
             }
         }
+        System.out.println(type);
         return type;
     }
 }
