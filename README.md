@@ -1,11 +1,32 @@
-Readme for Client Side Simulator
+#Job Scheduling Simulator for Distributed Systems
 
-Compiling the client side simulator:
-1. Change directory to .../com/company
-2. Run compileClient.sh
+The project has developed a client-side job scheduler that is capable of scheduling jobs across a variety of distributed resources based on the allocation of all jobs to the largest aviliable server.
 
-Running the client side simulator:
-1. Place the com folder and runClient.sh into the same directory as ds-server.
-2. change directry to .../ds-sim.
-3. Run ds-server with predefined configuration and the -n option.
-4. Run runClient.sh
+##Compilation
+The compilation of this code can be done either by manually compiling by running the following at the command line:
+
+
+    cd .../com/company
+    javac *.java
+
+Or by running the following:
+
+    cd .../com/company
+	compileClient.sh
+
+
+##Usage
+In order to run the simulator ensure that the com folder is located in the same directory as the ds-server application.  To start the simulation the following at the command line:
+
+    cd .../ds-sim
+	./ds-server -v brief -c <config file> -n 
+	java com.company.Main
+
+Or by running the following, which allows the parsing of the client through the testing script:
+
+    cd .../ds-sim
+	./ds-server -v brief -c <config file> -n 
+	runClient.sh
+
+
+
