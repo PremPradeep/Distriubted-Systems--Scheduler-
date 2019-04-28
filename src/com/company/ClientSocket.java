@@ -134,7 +134,10 @@ public class ClientSocket {
                         break;
 
                     case "ff":
-                        //First fit code goes here
+                        serverAllocation = firstFit(jobInfo);
+                        if (!serverAllocation[0].equals("NONE")) {
+                            this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
+                        }
                         break;
 
                     case "bf":
@@ -218,5 +221,23 @@ public class ClientSocket {
             }
         }
         return new String[] {type, "0"};
+    }
+
+    private String[] firstFit(String[] jobN){
+
+        Collections.sort(this.systemXML, new Comparator<String[]>() {
+            public int compare(String[] string, String[] otherString) {
+                return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
+            }
+        });
+
+        for (int i = 0; i < systemXML.size(); i++){
+            if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))){
+                return new String[] {systemXML.get(i)[0], "0"};
+            }
+        }
+        return new String[] {"NONE", "NONE"};
     }
 }
