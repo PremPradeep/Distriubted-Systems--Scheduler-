@@ -9,6 +9,8 @@ import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 // Class for implementing the client side communication for the project.
 public class ClientSocket {
@@ -16,6 +18,7 @@ public class ClientSocket {
     //Host name and communication port for socket communication.
     private String hostName;
     private int port;
+    private String algorithm;
     private boolean running;
 
     // Data structures
@@ -31,12 +34,13 @@ public class ClientSocket {
     private BufferedReader inC;
 
     // Constructor that instantiates the input and output streams as well as connecting to the server.
-    public ClientSocket (String hostName, int port){
+    public ClientSocket (String hostName, int port, String algorithm){
 
         // Sets the client as running and specifying the hostname and port to connect over.
         this.running = true;
         this.hostName = hostName;
         this.port = port;
+        this.algorithm = algorithm;
 
         // Opens the socket connection and created the input and output data streams.
         try {
@@ -89,7 +93,7 @@ public class ClientSocket {
         // Initial authentication protocol
         this.sendMessage("HELO");
         if (this.readMessage().equals("OK")){
-            this.sendMessage("AUTH nicholas");
+            this.sendMessage("AUTH Group2");
 
             // Parses the system.xml into a data structure to allow for identification of server resources.
             this.readXML();
@@ -122,21 +126,26 @@ public class ClientSocket {
 
         } else {
             if (jobInfo[0].equals("JOBN")) {
+                String [] serverAllocation;
+                switch (this.algorithm){
+                    case "atl":
+                        serverAllocation = allToLargest();
+                        this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
+                        break;
 
-                // Code currently not used due to not requiring it for allocateToLargest algorithm with it adding a
-                // considerable amount of additional computing time, but is here for implementation for later
-                // algorithms. Requests all server resources and lists all active jobs on a specific server.
+                    case "ff":
+                        //First fit code goes here
+                        break;
 
-                //this.sendMessage("RESC All");
-                //this.resourceList = createDataStruct();
-                //this.sendMessage("LSTJ <server type> <server number>);
-                //this.serverJobList = createDataStruct();
+                    case "bf":
+                        //Best fit code goes here
+                        break;
 
-                // Determines the largest server based on the system.xml.
-                String serverType = findLargestServer();
+                    case "wf":
+                        //worst fit code goes here
+                        break;
 
-                // Schedules the current job on the first largest server available (i.e server with ID 0).
-                this.sendMessage("SCHD " + jobInfo[2] + " " + serverType + " 0");
+                }
             }
         }
     }
@@ -197,7 +206,7 @@ public class ClientSocket {
 
     // Algorithm to find the largest server by iterating over the system.xml file based on the server core count
     // (measurement of how large the server is) and returns the type of the largest server.
-    private String findLargestServer(){
+    private String[] allToLargest(){
 
         int currentSize = 0;
         String type = "";
@@ -208,7 +217,6 @@ public class ClientSocket {
                 type = systemXML.get(i)[0];
             }
         }
-        System.out.println(type);
-        return type;
+        return new String[] {type, "0"};
     }
 }
