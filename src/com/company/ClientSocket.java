@@ -226,6 +226,7 @@ public class ClientSocket {
     private String[] firstFit(String[] jobN){
 
         String [] backupServer = new String[] {"", ""};
+        boolean initalRun = true;
 
         Collections.sort(this.systemXML, new Comparator<String[]>() {
             public int compare(String[] string, String[] otherString) {
@@ -238,15 +239,18 @@ public class ClientSocket {
                     (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5]))&&
                     (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))){
 
-                backupServer = new String [] {systemXML.get(i)[0], "0"};
+                if (initalRun) {
+                    backupServer = new String[]{systemXML.get(i)[0], "0"};
+                    initalRun = false;
+                }
 
                 this.sendMessage("RESC Type " + systemXML.get(i)[0]);
                 this.resourceList = createDataStruct();
 
                 for (int k = 0; k < Integer.parseInt(systemXML.get(i)[1]); k++){
-                    if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
-                            (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5]))&&
-                            (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))){
+                    if ((Integer.parseInt(resourceList.get(k)[4]) >= Integer.parseInt(jobN[4])) &&
+                            (Integer.parseInt(resourceList.get(k)[5]) >= Integer.parseInt(jobN[5]))&&
+                            (Integer.parseInt(resourceList.get(k)[6]) >= Integer.parseInt(jobN[6]))){
 
                         return new String[] {resourceList.get(k)[0], resourceList.get(k)[1]};
                     }
