@@ -28,5 +28,10 @@ Or by running the following, which allows the parsing of the client through the 
 	./ds-server -v brief -c <config file> -n 
 	runClient.sh
 
+Simulation can be run with a specific algorithm using the -a option. Default operation uses the allToLargest algorithm, with first fit (ff), best fit (bf) and worst fit (wf) being specified as provided here:
+
+	cd .../ds-sim
+	./ds-server -v brief -c <config file> -n 
+	java com.company.Main [-a] <algorithm>
 
 
