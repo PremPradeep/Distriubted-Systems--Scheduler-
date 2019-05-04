@@ -189,14 +189,14 @@ public class ClientSocket {
                         break;
 
                     case "ff":
-                        serverAllocation = firstFit(jobInfo);
+                        serverAllocation = firstFitAlt(jobInfo);
                         if (!serverAllocation[0].equals("NONE")) {
                             this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         }
                         break;
 
                     case "bf":
-                        //Best fit code goes here
+                        //best fit code goes here
                         break;
 
                     case "wf":
@@ -360,6 +360,61 @@ public class ClientSocket {
         }
         // If it cannot fit the job on a server allocates it to the first active server with the minimum initial
         // resources to run the job.
+        return backupServer;
+    }
+
+    /**
+     * Alternate implementation of one of the main algorithm functions for the client side simulator. Returns a a server
+     * scheduling decision for a given job in the form of a String array of size two with the String at index 0 being
+     * the server type (e.g. "Small") and the String at index two being a non-negative integer (e.g. 0, 1, ... n).
+     * <p>
+     * This differs from the original implementation as it makes ues of the "RESC Avail" server command, and sorts the
+     * result based on core size, with the first item in that list being the first available server with minimum
+     * resources, and only if this is not found evaluates systemXML.
+     * <p>
+     * This function will attempt to allocate the job to the smallest server that the job can be run on, iterating over
+     * decisions from smallest to largest. In the event the job cannot be run on any server schedules it to be preformed
+     * on the smallest server whose initial resources meet the requirements of the job.
+     *
+     * @param jobN a job to be scheduled in the format "JOBN submit_time job_ID est_runtime cores memory disk".
+     * @return schedulingDecision a string array that contains the server type and server index.
+     */
+    private String[] firstFitAlt(String[] jobN){
+
+        String [] backupServer = new String[] {"", ""};
+
+        // Obtains a list of available resources based on the job requirements.
+        this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+
+        // If the resource list has one or more entries, meaning that there are in fact servers that are available and
+        // have the resources to run the job, we sort the resource list based on core size and return the first server,
+        // which is the first available in terms of size and index.
+        if (this.resourceList.size() > 0){
+            Collections.sort(this.resourceList, new Comparator<String[]>() {
+                public int compare(String[] string, String[] otherString) {
+                    return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
+                }
+            });
+
+            return new String[] {this.resourceList.get(0)[0], resourceList.get(0)[1]};
+
+        }
+
+        // If the above condition is not met, sorts the system xml file and returns the smallest server with requisite
+        // initial resources to run the job.
+        Collections.sort(this.systemXML, new Comparator<String[]>() {
+            public int compare(String[] string, String[] otherString) {
+                return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
+            }
+        });
+        for (int i = 0; i < this.systemXML.size(); i++) {
+            if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+
+                backupServer = new String[] {this.systemXML.get(i)[0], "0"};
+            }
+        }
         return backupServer;
     }
 }
