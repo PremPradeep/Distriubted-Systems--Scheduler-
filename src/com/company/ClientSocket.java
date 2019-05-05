@@ -219,4 +219,13 @@ public class ClientSocket {
         }
         return new String[] {type, "0"};
     }
+
+private String[] bestFit(String[] jobN) {
+
+        String [] backupserver = new String[] {"", ""};
+
+        return backupserver;
+
+}
+
 }
