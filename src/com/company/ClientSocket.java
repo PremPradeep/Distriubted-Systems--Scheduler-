@@ -142,7 +142,7 @@ public class ClientSocket {
                         break;
 
                     case "wf":
-                        //worst fit code goes here
+                        serverAllocation = worstFit(jobInfo);
                         break;
 
                 }
@@ -218,5 +218,47 @@ public class ClientSocket {
             }
         }
         return new String[] {type, "0"};
+    }
+    
+    private String[] worstFit(String[] jobN) {
+    	int worstFit = Integer.MIN_VALUE;
+    	int altFit = Integer.MIN_VALUE;
+    	int fitness; //Used to determine the viability of using a certain server
+    	
+    	String[] backupServer = new String[] {"", ""};
+    	
+    	for (int i = 0; i < systemXML.size(); i++) {  		
+    		for (int j = 0; j < Integer.parseInt(systemXML.get(i)[1]); j++) {
+//    			this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]);
+				this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+				System.out.println("resourcelist " + resourceList.get(i)[0]);
+				
+    			//Checking if server has enough resources 
+    			if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                        (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                        (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+    				    				
+    				fitness = Integer.parseInt(resourceList.get(i)[4]) - Integer.parseInt(jobN[3]);
+
+    				if (fitness > worstFit && Integer.parseInt(resourceList.get(i)[4]) != -1) {
+        				//set worstFit to a value
+    					worstFit = fitness;
+    					System.out.println("resourcelist(i)[0] " + resourceList.get(i)[0]);
+    					System.out.println("resourcelist(i)[1] " + resourceList.get(i)[1]);
+//    					return new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+        			} 
+        			else if (fitness > altFit && Integer.parseInt(resourceList.get(i)[4]) == -1) {
+        				//set altFit to a value
+        				altFit = fitness;
+        			}
+    			}
+    		}
+    	}
+    	
+//    	if (condition) {
+//    		
+//    	}
+    	
+    	return backupServer;
     }
 }
