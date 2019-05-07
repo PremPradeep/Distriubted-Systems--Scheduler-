@@ -138,7 +138,10 @@ public class ClientSocket {
                         break;
 
                     case "bf":
-                        //Best fit code goes here
+                        serverAllocation = bestFit(jobInfo);
+                        if (!serverAllocation[0].equals("NONE")) {
+                            this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
+                        }
                         break;
 
                     case "wf":
@@ -151,8 +154,10 @@ public class ClientSocket {
     }
 
     // Parses data sent from the server into an arraylist of string arrays for use in algorithm.
-    private ArrayList<String[]> createDataStruct() {
+    private ArrayList<String[]> createDataStruct(String message) {
         ArrayList<String[]> result = new ArrayList<String[]>();
+
+        this.sendMessage(message);
 
         if (this.readMessage().equals("DATA")) {
             this.sendMessage("OK");
@@ -220,12 +225,46 @@ public class ClientSocket {
         return new String[] {type, "0"};
     }
 
-private String[] bestFit(String[] jobN) {
+    private String[] bestFit(String[] jobN) {
+
+        int bestfit = Integer.MAX_VALUE;
+        int minAvail = Integer.MAX_VALUE;
+        int fitness;
 
         String [] backupserver = new String[] {"", ""};
 
+            for (int i = 0; i < systemXML.size(); i++) {
+
+                for (int j = 0; j < Integer.parseInt(systemXML.get(i)[1]); j++) {
+
+                    this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+
+                    if ((Integer.parseInt(resourceList.get(j)[4]) >= Integer.parseInt(jobN[4])) &&
+                            (Integer.parseInt(resourceList.get(j)[5]) >= Integer.parseInt(jobN[5])) &&
+                            (Integer.parseInt(resourceList.get(j)[6]) >= Integer.parseInt(jobN[6]))) {
+
+                        fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+
+
+                        if((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(j)[3]) < minAvail))) {
+
+                            bestfit = fitness;
+                            minAvail = Integer.parseInt(resourceList.get(j)[3]);
+                            System.out.println("resourcelist(j)[0] " + resourceList.get(j)[0]);
+                            System.out.println("resourcelist(j)[1] " + resourceList.get(j)[1]);
+                            backupserver = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+
+                        }
+
+                    }
+
+                }
+
+            }
+
         return backupserver;
 
-}
+    }
 
-}
+    }
+
