@@ -143,6 +143,9 @@ public class ClientSocket {
 
                     case "wf":
                         serverAllocation = worstFit(jobInfo);
+                        if (!serverAllocation[0].equals("NONE")) {
+                    		this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
+                    	}
                         break;
 
                 }
@@ -151,8 +154,10 @@ public class ClientSocket {
     }
 
     // Parses data sent from the server into an arraylist of string arrays for use in algorithm.
-    private ArrayList<String[]> createDataStruct() {
+    private ArrayList<String[]> createDataStruct(String message) {
         ArrayList<String[]> result = new ArrayList<String[]>();
+
+		this.sendMessage(message);
 
         if (this.readMessage().equals("DATA")) {
             this.sendMessage("OK");
@@ -224,41 +229,50 @@ public class ClientSocket {
     	int worstFit = Integer.MIN_VALUE;
     	int altFit = Integer.MIN_VALUE;
     	int fitness; //Used to determine the viability of using a certain server
+    	boolean worstFound = false;
+    	boolean altFound = false;
     	
     	String[] backupServer = new String[] {"", ""};
     	
-    	for (int i = 0; i < systemXML.size(); i++) {  		
+    	//Iterates over the server types in the order they appear in the XML file
+    	for (int i = 0; i < systemXML.size(); i++) {
+			//Iterates over resource list to calculate fitness value		  		
     		for (int j = 0; j < Integer.parseInt(systemXML.get(i)[1]); j++) {
-//    			this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]);
-				this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
-				System.out.println("resourcelist " + resourceList.get(i)[0]);
 				
-    			//Checking if server has enough resources 
-    			if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
-                        (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
-                        (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
-    				    				
-    				fitness = Integer.parseInt(resourceList.get(i)[4]) - Integer.parseInt(jobN[3]);
+//				backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
 
-    				if (fitness > worstFit && Integer.parseInt(resourceList.get(i)[4]) != -1) {
-        				//set worstFit to a value
+				this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+				
+    			//Checks if current server has enough resources 	
+    			if ((Integer.parseInt(resourceList.get(j)[4]) >= Integer.parseInt(jobN[4])) && //[4] is the number of cores on a server
+                        (Integer.parseInt(resourceList.get(j)[5]) >= Integer.parseInt(jobN[5])) && //[5] is the available memory on a server
+                        (Integer.parseInt(resourceList.get(j)[6]) >= Integer.parseInt(jobN[6]))) { //[6] is the available disk space on a server
+    				    				
+    				fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+
+    				if ((fitness > worstFit) && (Integer.parseInt(resourceList.get(j)[3]) <= Integer.parseInt(jobN[3]))) {
     					worstFit = fitness;
-    					System.out.println("resourcelist(i)[0] " + resourceList.get(i)[0]);
-    					System.out.println("resourcelist(i)[1] " + resourceList.get(i)[1]);
-//    					return new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+    					worstFound = true;
+    					System.out.println("resourcelist(j)[0] " + resourceList.get(j)[0]);
+    					System.out.println("resourcelist(j)[1] " + resourceList.get(j)[1]);
+    					backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
         			} 
-        			else if (fitness > altFit && Integer.parseInt(resourceList.get(i)[4]) == -1) {
-        				//set altFit to a value
+        			else if ((fitness > altFit) && (Integer.parseInt(resourceList.get(j)[3]) <= Integer.parseInt(jobN[3]))) {
         				altFit = fitness;
+        				altFound = true;
+        				System.out.println("altfit");
+    					backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
         			}
     			}
     		}
     	}
     	
-//    	if (condition) {
-//    		
-//    	}
-    	
-    	return backupServer;
+		if (worstFound) {
+    		return backupServer;
+    	} else if (altFound) {
+    		return backupServer;
+    	} else {
+    		return backupServer;
+    	}
     }
 }
