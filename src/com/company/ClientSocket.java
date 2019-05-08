@@ -230,6 +230,7 @@ public class ClientSocket {
         int bestfit = Integer.MAX_VALUE;
         int minAvail = Integer.MAX_VALUE;
         int fitness;
+        boolean bestfound = false;
 
         String [] backupserver = new String[] {"", ""};
 
@@ -250,8 +251,6 @@ public class ClientSocket {
 
                             bestfit = fitness;
                             minAvail = Integer.parseInt(resourceList.get(j)[3]);
-                            System.out.println("resourcelist(j)[0] " + resourceList.get(j)[0]);
-                            System.out.println("resourcelist(j)[1] " + resourceList.get(j)[1]);
                             backupserver = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
 
                         }
@@ -262,7 +261,12 @@ public class ClientSocket {
 
             }
 
-        return backupserver;
+        if (bestfound) {
+            return backupserver;
+        } else {
+            return backupserver;
+        }
+
 
     }
 
