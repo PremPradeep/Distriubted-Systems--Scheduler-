@@ -189,7 +189,7 @@ public class ClientSocket {
                         break;
 
                     case "ff":
-                        serverAllocation = firstFitAlt(jobInfo);
+                        serverAllocation = firstFit(jobInfo);
                         if (!serverAllocation[0].equals("NONE")) {
                             this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         }
@@ -200,7 +200,7 @@ public class ClientSocket {
                         break;
 
                     case "wf":
-                        //worst fit code goes here
+                        //worst fit goes here
                         break;
 
                 }
@@ -334,13 +334,6 @@ public class ClientSocket {
                     (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5]))&&
                     (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))){
 
-                // Captures the smallest server that the job can be run on to be returned in the event all servers
-                // are currently active and cannot fit the job.
-                if (initialRun) {
-                    backupServer = new String[]{systemXML.get(i)[0], "0"};
-                    initialRun = false;
-                }
-
                 // Sends a message to the server for the resource information for the given server size and creates an
                 // array list of string arrays with each item in the array list being one server of type the queried
                 // type.
@@ -348,6 +341,14 @@ public class ClientSocket {
 
                 // Iterates over the resource list to attempt to fit the job onto a server.
                 for (int k = 0; k < Integer.parseInt(systemXML.get(i)[1]); k++){
+
+                    // Captures the smallest server that the job can be run on to be returned in the event all servers
+                    // are currently active and cannot fit the job.
+                    if (initialRun && Integer.parseInt(resourceList.get(k)[2]) == 3) {
+                        backupServer = new String[]{systemXML.get(i)[0], "0"};
+                        initialRun = false;
+                    }
+
                     if ((Integer.parseInt(resourceList.get(k)[4]) >= Integer.parseInt(jobN[4])) &&
                             (Integer.parseInt(resourceList.get(k)[5]) >= Integer.parseInt(jobN[5]))&&
                             (Integer.parseInt(resourceList.get(k)[6]) >= Integer.parseInt(jobN[6]))){
@@ -364,6 +365,7 @@ public class ClientSocket {
     }
 
     /**
+     * NOTE - Does not return correct value due to Avail not showing servers with state 3 with appropriate resources.
      * Alternate implementation of one of the main algorithm functions for the client side simulator. Returns a a server
      * scheduling decision for a given job in the form of a String array of size two with the String at index 0 being
      * the server type (e.g. "Small") and the String at index two being a non-negative integer (e.g. 0, 1, ... n).
