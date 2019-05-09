@@ -3,7 +3,6 @@ package com.company;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
@@ -233,27 +232,43 @@ public class ClientSocket {
         boolean bestfound = false;
 
         String [] backupserver = new String[] {"", ""};
+        String [] bestserver = new String[] {"", ""};
 
-            for (int i = 0; i < systemXML.size(); i++) {
-
-                for (int j = 0; j < Integer.parseInt(systemXML.get(i)[1]); j++) {
-
-                    this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
-
-                    if ((Integer.parseInt(resourceList.get(j)[4]) >= Integer.parseInt(jobN[4])) &&
-                            (Integer.parseInt(resourceList.get(j)[5]) >= Integer.parseInt(jobN[5])) &&
-                            (Integer.parseInt(resourceList.get(j)[6]) >= Integer.parseInt(jobN[6]))) {
-
-                        fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+        Collections.sort(this.systemXML, new Comparator<String[]>() { 
+            public int compare(String[] string, String[] otherString) {
+                return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
+            }
+        });
 
 
-                        if((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(j)[3]) < minAvail))) {
 
-                            bestfit = fitness;
-                            minAvail = Integer.parseInt(resourceList.get(j)[3]);
-                            backupserver = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+        for (int i = 0; i < this.systemXML.size(); i++) {
+            if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
-                        }
+                backupserver = new String[] {this.systemXML.get(i)[0], "0"};
+            }
+        }
+
+        for (int i = 0; i < systemXML.size(); i++) {
+
+
+                this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+
+                if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                        (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                        (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+
+                    fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+
+
+                    if((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(i)[3]) < minAvail))) {
+
+                        bestfit = fitness;
+                        minAvail = Integer.parseInt(resourceList.get(i)[3]);
+                        bestserver = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
+                        bestfound = true;
 
                     }
 
@@ -261,12 +276,11 @@ public class ClientSocket {
 
             }
 
-        if (bestfound) {
-            return backupserver;
-        } else {
-            return backupserver;
-        }
-
+            if (bestfound) {
+                return bestserver;
+            } else {
+                return backupserver;
+            }
 
     }
 
