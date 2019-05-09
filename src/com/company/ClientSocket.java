@@ -9,7 +9,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 // Class for implementing the client side communication for the project.
 public class ClientSocket {
@@ -22,7 +21,7 @@ public class ClientSocket {
 
     // Data structures
     private ArrayList<String[]> resourceList;
-    private ArrayList<String[]> serverJobList;
+    private ArrayList<String[]> resourcelistAll;
     private ArrayList<String[]> systemXML;
 
     // Java Socket communication object.
@@ -234,13 +233,14 @@ public class ClientSocket {
         String[] backupserver = new String[]{"", ""};
         String[] bestserver = new String[]{"", ""};
 
+        this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+        this.resourcelistAll = createDataStruct("RESC All");
+
 
         if(resourceList.size() > 0) {
 
             for (int i = 0; i < resourceList.size(); i++) {
-
-
-                this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+                
 
                 if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
                         (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
@@ -256,11 +256,33 @@ public class ClientSocket {
                         bestserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
                         bestfound = true;
 
-                        //best active server
-                        if (Integer.parseInt(resourceList.get(i)[2]) == 1) {
-                            backupserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
+
+                    }
+
+                }
+
+            }
+
+        } else {
+
+            for (int i = 0; i < resourcelistAll.size(); i++) {
 
 
+
+                if ((Integer.parseInt(resourcelistAll.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                        (Integer.parseInt(resourcelistAll.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                        (Integer.parseInt(resourcelistAll.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+
+                    fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourcelistAll.get(i)[4]);
+
+
+                    if ((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourcelistAll.get(i)[3]) < minAvail))) {
+
+                        bestfit = fitness;
+                        minAvail = Integer.parseInt(resourcelistAll.get(i)[3]);
+
+                        if(Integer.parseInt(resourcelistAll.get(i)[2]) == 3) {
+                            backupserver = new String[]{resourcelistAll.get(i)[0], resourcelistAll.get(i)[1]};
                         }
 
                     }
@@ -269,7 +291,8 @@ public class ClientSocket {
 
             }
 
-            }
+
+        }
 
         if (bestfound) {
             return bestserver;
