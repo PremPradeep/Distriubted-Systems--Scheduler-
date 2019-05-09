@@ -240,7 +240,7 @@ public class ClientSocket {
         if(resourceList.size() > 0) {
 
             for (int i = 0; i < resourceList.size(); i++) {
-                
+
 
                 if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
                         (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
