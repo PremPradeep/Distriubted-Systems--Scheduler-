@@ -235,9 +235,9 @@ public class ClientSocket {
         String[] bestserver = new String[]{"", ""};
 
 
+        if(resourceList.size() > 0) {
 
-
-            for (int i = 0; i < systemXML.size(); i++) {
+            for (int i = 0; i < resourceList.size(); i++) {
 
 
                 this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
@@ -257,7 +257,7 @@ public class ClientSocket {
                         bestfound = true;
 
                         //best active server
-                        if(Integer.parseInt(resourceList.get(i)[2]) == 1) {
+                        if (Integer.parseInt(resourceList.get(i)[2]) == 1) {
                             backupserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
 
 
@@ -267,7 +267,7 @@ public class ClientSocket {
 
                 }
 
-
+            }
 
             }
 
