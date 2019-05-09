@@ -231,27 +231,13 @@ public class ClientSocket {
         int fitness;
         boolean bestfound = false;
 
-        String [] backupserver = new String[] {"", ""};
-        String [] bestserver = new String[] {"", ""};
-
-        Collections.sort(this.systemXML, new Comparator<String[]>() { 
-            public int compare(String[] string, String[] otherString) {
-                return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
-            }
-        });
+        String[] backupserver = new String[]{"", ""};
+        String[] bestserver = new String[]{"", ""};
 
 
 
-        for (int i = 0; i < this.systemXML.size(); i++) {
-            if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
-                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
-                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
-                backupserver = new String[] {this.systemXML.get(i)[0], "0"};
-            }
-        }
-
-        for (int i = 0; i < systemXML.size(); i++) {
+            for (int i = 0; i < systemXML.size(); i++) {
 
 
                 this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
@@ -263,25 +249,33 @@ public class ClientSocket {
                     fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
 
 
-                    if((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(i)[3]) < minAvail))) {
+                    if ((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(i)[3]) < minAvail))) {
 
                         bestfit = fitness;
                         minAvail = Integer.parseInt(resourceList.get(i)[3]);
-                        bestserver = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
+                        bestserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
                         bestfound = true;
+
+                        //best active server
+                        if(Integer.parseInt(resourceList.get(i)[2]) == 1) {
+                            backupserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
+
+
+                        }
 
                     }
 
                 }
 
+
+
             }
 
-            if (bestfound) {
-                return bestserver;
-            } else {
-                return backupserver;
-            }
-
+        if (bestfound) {
+            return bestserver;
+        } else {
+            return backupserver;
+        }
     }
 
     }
