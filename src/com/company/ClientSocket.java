@@ -234,7 +234,7 @@ public class ClientSocket {
         String[] bestserver = new String[]{"", ""};
 
         this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
-        this.resourcelistAll = createDataStruct("RESC All");
+        //this.resourcelistAll = createDataStruct("RESC All");
 
 
         if(resourceList.size() > 0) {
@@ -242,11 +242,12 @@ public class ClientSocket {
             for (int i = 0; i < resourceList.size(); i++) {
 
 
+
                 if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
                         (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
                         (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
-                    fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+                    fitness = Integer.parseInt(resourceList.get(i)[4]) - Integer.parseInt(jobN[4]);
 
 
                     if ((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(i)[3]) < minAvail))) {
@@ -263,7 +264,9 @@ public class ClientSocket {
 
             }
 
-        } else {
+        }
+
+        /*else {
 
             for (int i = 0; i < resourcelistAll.size(); i++) {
 
@@ -292,7 +295,7 @@ public class ClientSocket {
             }
 
 
-        }
+        }*/
 
         if (bestfound) {
             return bestserver;
