@@ -232,7 +232,7 @@ public class ClientSocket {
         String[] backupserver = new String[]{"", ""};
         String[] bestserver = new String[]{"", ""};
 
-        this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+        this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]); //creates list of available servers
 
 
         if (resourceList.size() > 0) {
@@ -268,7 +268,7 @@ public class ClientSocket {
                         (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
                         (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
-                    this.resourceList = createDataStruct("RESC All " + systemXML.get(i)[0]); //creates list of server type that fits
+                    this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]); //creates list of server type that fits
 
 
                 }
