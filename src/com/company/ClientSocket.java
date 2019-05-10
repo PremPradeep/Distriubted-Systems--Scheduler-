@@ -235,12 +235,12 @@ public class ClientSocket {
         this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]); //creates list of available servers
 
 
-        if (resourceList.size() > 0) {
+        if (resourceList.size() > 0) { //everyserver in rsc list
 
             for (int i = 0; i < resourceList.size(); i++) {
 
 
-                if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) && //enough rsc
                         (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
                         (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
