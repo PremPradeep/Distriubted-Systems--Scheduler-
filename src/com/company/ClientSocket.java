@@ -21,7 +21,6 @@ public class ClientSocket {
 
     // Data structures
     private ArrayList<String[]> resourceList;
-    private ArrayList<String[]> resourcelistAll;
     private ArrayList<String[]> systemXML;
 
     // Java Socket communication object.
@@ -32,7 +31,7 @@ public class ClientSocket {
     private BufferedReader inC;
 
     // Constructor that instantiates the input and output streams as well as connecting to the server.
-    public ClientSocket (String hostName, int port, String algorithm){
+    public ClientSocket(String hostName, int port, String algorithm) {
 
         // Sets the client as running and specifying the hostname and port to connect over.
         this.running = true;
@@ -42,65 +41,65 @@ public class ClientSocket {
 
         // Opens the socket connection and created the input and output data streams.
         try {
-            client = new Socket (hostName, port);
+            client = new Socket(hostName, port);
             outC = new BufferedWriter(new OutputStreamWriter(client.getOutputStream()));
             inC = new BufferedReader(new InputStreamReader(client.getInputStream()));
-        } catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     // Function for reading incoming messages. Prints the message to the terminal and returns a string
     // containing the message.
-    private String readMessage(){
+    private String readMessage() {
         try {
             String message = inC.readLine();
             System.out.println("RCVD " + message);
             return message;
-        } catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return "message error";
     }
 
     // Function for sending messages. Prints the message to the terminal.
-    private void sendMessage(String message){
+    private void sendMessage(String message) {
         try {
             outC.write(message + "\n");
             outC.flush();
             System.out.println("SENT " + message);
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     // Closes the open connection and readers/writers.
-    private void stopConnection(){
+    private void stopConnection() {
         try {
             inC.close();
             outC.close();
             client.close();
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     // Main function for running the client and scheduling jobs.
-    public void runClient (){
+    public void runClient() {
 
         // Initial authentication protocol
         this.sendMessage("HELO");
-        if (this.readMessage().equals("OK")){
+        if (this.readMessage().equals("OK")) {
             this.sendMessage("AUTH Group2");
 
             // Parses the system.xml into a data structure to allow for identification of server resources.
             this.readXML();
 
             // Loop to iterate over the job requests and parse them accordingly.
-            while (this.running){
+            while (this.running) {
 
                 // Reads the "OK" message from the server and responds with "REDY".
-                if(this.readMessage().equals("OK")) {
+                if (this.readMessage().equals("OK")) {
                     this.sendMessage("REDY");
                     this.jobSchedule();
                 }
@@ -109,7 +108,7 @@ public class ClientSocket {
     }
 
     // Job scheduling function responsible for parsing messages related to jobs.
-    private void jobSchedule(){
+    private void jobSchedule() {
 
         // Takes the inital job request and splits on whitespace into an array of strings.
         String[] jobInfo = this.readMessage().split("\\s+");
@@ -117,15 +116,15 @@ public class ClientSocket {
         // If the server has sent "NONE" responds with "QUIT" and closes the connection and terminates the client.
         if (jobInfo[0].equals("NONE")) {
             this.sendMessage("QUIT");
-            if(this.readMessage().equals("QUIT")){
+            if (this.readMessage().equals("QUIT")) {
                 this.stopConnection();
                 this.running = false;
             }
 
         } else {
             if (jobInfo[0].equals("JOBN")) {
-                String [] serverAllocation;
-                switch (this.algorithm){
+                String[] serverAllocation;
+                switch (this.algorithm) {
                     case "atl":
                         serverAllocation = allToLargest();
                         this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
@@ -177,7 +176,7 @@ public class ClientSocket {
     }
 
     // Reads in the system.xml using the SAX parser and stores the information in an arraylist of string arrays.
-    private void readXML(){
+    private void readXML() {
         systemXML = new ArrayList<String[]>();
         try {
             int index = 0;
@@ -195,7 +194,7 @@ public class ClientSocket {
                     for (int i = 0; i < attributes.getLength(); i++) {
                         temp[i] = attributes.getValue(i);
                     }
-                    if (qName.equals("server")){
+                    if (qName.equals("server")) {
                         systemXML.add(temp);
                     }
                 }
@@ -209,18 +208,18 @@ public class ClientSocket {
 
     // Algorithm to find the largest server by iterating over the system.xml file based on the server core count
     // (measurement of how large the server is) and returns the type of the largest server.
-    private String[] allToLargest(){
+    private String[] allToLargest() {
 
         int currentSize = 0;
         String type = "";
 
-        for (int i = 0; i < systemXML.size(); i++){
-            if (Integer.parseInt(systemXML.get(i)[4]) > currentSize){
+        for (int i = 0; i < systemXML.size(); i++) {
+            if (Integer.parseInt(systemXML.get(i)[4]) > currentSize) {
                 currentSize = Integer.parseInt(systemXML.get(i)[4]);
                 type = systemXML.get(i)[0];
             }
         }
-        return new String[] {type, "0"};
+        return new String[]{type, "0"};
     }
 
     private String[] bestFit(String[] jobN) {
@@ -234,13 +233,11 @@ public class ClientSocket {
         String[] bestserver = new String[]{"", ""};
 
         this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
-        //this.resourcelistAll = createDataStruct("RESC All");
 
 
-        if(resourceList.size() > 0) {
+        if (resourceList.size() > 0) {
 
             for (int i = 0; i < resourceList.size(); i++) {
-
 
 
                 if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
@@ -248,7 +245,6 @@ public class ClientSocket {
                         (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
                     fitness = Integer.parseInt(resourceList.get(i)[4]) - Integer.parseInt(jobN[4]);
-
 
                     if ((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(i)[3]) < minAvail))) {
 
@@ -264,45 +260,46 @@ public class ClientSocket {
 
             }
 
-        }
+        } else {
 
-        /*else {
+            for (int i = 0; i < systemXML.size(); i++) { //interates through systemxml file
 
-            for (int i = 0; i < resourcelistAll.size(); i++) {
+                if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                        (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                        (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
 
+                    this.resourceList = createDataStruct("RESC All " + systemXML.get(i)[0]); //creates list of server type that fits
 
-
-                if ((Integer.parseInt(resourcelistAll.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
-                        (Integer.parseInt(resourcelistAll.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
-                        (Integer.parseInt(resourcelistAll.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
-
-                    fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourcelistAll.get(i)[4]);
-
-
-                    if ((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourcelistAll.get(i)[3]) < minAvail))) {
-
-                        bestfit = fitness;
-                        minAvail = Integer.parseInt(resourcelistAll.get(i)[3]);
-
-                        if(Integer.parseInt(resourcelistAll.get(i)[2]) == 3) {
-                            backupserver = new String[]{resourcelistAll.get(i)[0], resourcelistAll.get(i)[1]};
-                        }
-
-                    }
 
                 }
+
+
+            }
+
+            for (int j = 0; j < resourceList.size(); j++) { //goes through servers on resource list
+                if (Integer.parseInt(resourceList.get(j)[2]) == 3) { //if it is active
+
+                    fitness = Integer.parseInt(resourceList.get(j)[4]) - Integer.parseInt(jobN[4]); //gets fitness
+
+                    if ((fitness < bestfit) || (fitness == bestfit && (Integer.parseInt(resourceList.get(j)[3]) < minAvail))) {
+
+                        bestfit = fitness;
+                        minAvail = Integer.parseInt(resourceList.get(j)[3]);
+                        backupserver = new String[]{resourceList.get(j)[0], resourceList.get(j)[1]};
+                    }
+                }
+
 
             }
 
 
-        }*/
-
+        }
         if (bestfound) {
             return bestserver;
         } else {
             return backupserver;
         }
-    }
 
     }
+}
 
