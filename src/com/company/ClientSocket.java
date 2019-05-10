@@ -253,7 +253,33 @@ public class ClientSocket {
 					secondServer = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
 				}
 			}
-    	}
+    	} else { //conditional if no available servers
+			for (int i = 0; i < systemXML.size(); i++) {
+				if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+						(Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5]))&&
+						(Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))){
+
+				this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]); //checks for server types that fit
+				}
+
+				for (int j = 0; j < resourceList.size(); j++) {
+					if (Integer.parseInt(resourceList.get(j)[2]) == 3) { //where == 3 refers to an active server
+						fitness =  Integer.parseInt(resourceList.get(j)[4]) - Integer.parseInt(jobN[4]);
+
+					if ((fitness > worstFit) && (Integer.parseInt(resourceList.get(j)[4]) == Integer.parseInt(jobN[1]))) {
+						worstFit = fitness;
+						worstFound = true;
+						backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+					}
+					else if ((fitness > altFit) && (Integer.parseInt(resourceList.get(j)[2]) < 4)) { //where < 4 refers to a servers state being anything but unavailable
+						altFit = fitness;
+						altFound = true;
+						secondServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+					}
+				}
+			}
+		}
+		}
     	
 		if (worstFound) {
     		return backupServer;
