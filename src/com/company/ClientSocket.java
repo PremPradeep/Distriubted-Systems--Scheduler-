@@ -67,6 +67,8 @@ public class ClientSocket {
      * @param hostName server host name.
      * @param port port to make the socket connection over.
      * @param algorithm algorithm to be used (atl, ff, bf or wf).
+     *
+     * @author Nicholas Mangano
      */
     public ClientSocket (String hostName, int port, String algorithm){
 
@@ -91,6 +93,8 @@ public class ClientSocket {
      * containing the contents of the message.
      *
      * @return message received from the server.
+     *
+     * @author Nicholas Mangano
      */
     private String readMessage(){
         try {
@@ -108,6 +112,8 @@ public class ClientSocket {
      * message to the terminal once it has been sent.
      *
      * @param message String to send to the server.
+     *
+     * @author Nicholas Mangano
      */
     private void sendMessage(String message){
         try {
@@ -122,6 +128,8 @@ public class ClientSocket {
     /**
      * Socket function for closing the open connection and terminating the readers and writers that are used to buffer
      * incoming and outgoing messages.
+     *
+     * @author Nicholas Mangano
      */
     private void stopConnection(){
         try {
@@ -190,17 +198,17 @@ public class ClientSocket {
 
                     case "ff":
                         serverAllocation = firstFit(jobInfo);
-                        if (!serverAllocation[0].equals("NONE")) {
-                            this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
-                        }
+                        this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         break;
 
                     case "bf":
-                        //best fit code goes here
+                        serverAllocation = bestFit(jobInfo);
+                        this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         break;
 
                     case "wf":
-                        //worst fit goes here
+                        serverAllocation = worstFit(jobInfo);
+                        this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         break;
 
                 }
@@ -216,6 +224,8 @@ public class ClientSocket {
      *
      * @param message controls what data the server sends.
      * @return an array list of String arrays that contains requested data.
+     *
+     * @author Nicholas Mangano
      */
     private ArrayList<String[]> createDataStruct(String message) {
         ArrayList<String[]> result = new ArrayList<String[]>();
@@ -244,6 +254,8 @@ public class ClientSocket {
     /**
      * Function responsible for reading in the system.xml file. Makes use of a SAC parser and stores the data into the
      * class level variable systemXML as an array list of string arrays tokenised on whitespace.
+     *
+     * @author Nicholas Mangano
      */
     private void readXML(){
         systemXML = new ArrayList<String[]>();
@@ -283,6 +295,8 @@ public class ClientSocket {
      * and determines size based on the servers core count. Returns the first largest servers type and index.
      *
      * @return largest server type and index.
+     *
+     * @author Nicholas Mangano
      */
     private String[] allToLargest(){
 
@@ -309,12 +323,14 @@ public class ClientSocket {
      *
      * @param jobN a job to be scheduled in the format "JOBN submit_time job_ID est_runtime cores memory disk".
      * @return schedulingDecision a string array that contains the server type and server index.
+     *
+     * @author Nicholas Mangano
      */
     private String[] firstFit(String[] jobN){
 
         // Creates variables to keep track of which server to allocate to in the event all servers are active and
         // cannot fit the job.
-        String [] backupServer = new String[] {"", ""};
+        String [] firstFitActiveServer = new String[] {"", ""};
         boolean initialRun = true;
 
         // Sorts systemXml in ascending order based on core count.
@@ -340,12 +356,12 @@ public class ClientSocket {
                 this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]);
 
                 // Iterates over the resource list to attempt to fit the job onto a server.
-                for (int k = 0; k < Integer.parseInt(systemXML.get(i)[1]); k++){
+                for (int k = 0; k < this.resourceList.size(); k++){
 
                     // Captures the smallest server that the job can be run on to be returned in the event all servers
                     // are currently active and cannot fit the job.
                     if (initialRun && Integer.parseInt(resourceList.get(k)[2]) == 3) {
-                        backupServer = new String[]{systemXML.get(i)[0], "0"};
+                        firstFitActiveServer = new String[]{systemXML.get(i)[0], "0"};
                         initialRun = false;
                     }
 
@@ -361,62 +377,195 @@ public class ClientSocket {
         }
         // If it cannot fit the job on a server allocates it to the first active server with the minimum initial
         // resources to run the job.
-        return backupServer;
+        return firstFitActiveServer;
     }
 
     /**
-     * NOTE - Does not return correct value due to Avail not showing servers with state 3 with appropriate resources.
-     * Alternate implementation of one of the main algorithm functions for the client side simulator. Returns a a server
-     * scheduling decision for a given job in the form of a String array of size two with the String at index 0 being
-     * the server type (e.g. "Small") and the String at index two being a non-negative integer (e.g. 0, 1, ... n).
+     * One of the main algorithm functions for the client side simulator. Returns a a server scheduling decision for a
+     * given job in the form of a String array of size two with the String at index 0 being the server type (e.g. "Small")
+     * and the String at index two being a non-negative integer (e.g. 0, 1, ... n).
      * <p>
-     * This differs from the original implementation as it makes ues of the "RESC Avail" server command, and sorts the
-     * result based on core size, with the first item in that list being the first available server with minimum
-     * resources, and only if this is not found evaluates systemXML.
-     * <p>
-     * This function will attempt to allocate the job to the smallest server that the job can be run on, iterating over
-     * decisions from smallest to largest. In the event the job cannot be run on any server schedules it to be preformed
-     * on the smallest server whose initial resources meet the requirements of the job.
+     * This function will attempt to allocate the job to the the best fit server that the job can be run on, iterating
+     * over decisions based on location in systemxml. In the event the job cannot be run on any server schedules it to
+     * be performed on the best fit active server whose initial resources meet the requirements of the job.
      *
      * @param jobN a job to be scheduled in the format "JOBN submit_time job_ID est_runtime cores memory disk".
      * @return schedulingDecision a string array that contains the server type and server index.
+     *
+     * @author Nicholas Mangano
      */
-    private String[] firstFitAlt(String[] jobN){
+    private String[] bestFit(String[] jobN){
 
-        String [] backupServer = new String[] {"", ""};
+        // Creates variables to keep track fitness and which server to allocate to in the event all servers are active
+        // and cannot fit the job.
+        int bestFitAlt = Integer.MAX_VALUE;
+        int bestFit  = Integer.MAX_VALUE;
+        int minAvail = Integer.MAX_VALUE;
 
-        // Obtains a list of available resources based on the job requirements.
-        this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+        boolean bestFitFound = false;
+        boolean initialRun = true;
 
-        // If the resource list has one or more entries, meaning that there are in fact servers that are available and
-        // have the resources to run the job, we sort the resource list based on core size and return the first server,
-        // which is the first available in terms of size and index.
-        if (this.resourceList.size() > 0){
-            Collections.sort(this.resourceList, new Comparator<String[]>() {
-                public int compare(String[] string, String[] otherString) {
-                    return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
-                }
-            });
+        int fitnessAlt;
+        int fitness;
+        int avail;
 
-            return new String[] {this.resourceList.get(0)[0], resourceList.get(0)[1]};
+        String [] bestFitServer = new String[] {"Error", "Error"};
+        String [] bestFitActiveServer = new String[] {"Error", "Error"};
 
-        }
+        // Iterates over all the server types in the order listed in system.XML.
+        for (int i = 0; i < systemXML.size(); i++){
+            initialRun = true;
 
-        // If the above condition is not met, sorts the system xml file and returns the smallest server with requisite
-        // initial resources to run the job.
-        Collections.sort(this.systemXML, new Comparator<String[]>() {
-            public int compare(String[] string, String[] otherString) {
-                return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
-            }
-        });
-        for (int i = 0; i < this.systemXML.size(); i++) {
+            // Checks if the job is capable of fitting on the server type assuming it has no other jobs running to pre
+            // check what server types the job can fit onto to reduce calls to the server for resource information.
             if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
-                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
-                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5]))&&
+                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))){
 
-                backupServer = new String[] {this.systemXML.get(i)[0], "0"};
+                // Sends a message to the server for the resource information for the given server size and creates an
+                // array list of string arrays with each item in the array list being one server of type the queried
+                // type.
+                this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]);
+
+                // Iterates over the resource list to attempt to fit the job onto a server.
+                for (int k = 0; k < this.resourceList.size(); k++){
+
+                    // Determines the best fit active server in the event that we cannot fit the job on another server.
+                    fitnessAlt = Integer.parseInt(systemXML.get(i)[4]) - Integer.parseInt(jobN[4]);
+                    if (initialRun && (Integer.parseInt(resourceList.get(k)[2]) == 3) && (fitnessAlt < bestFitAlt)) {
+                        bestFitAlt = fitnessAlt;
+                        bestFitActiveServer = new String[]{resourceList.get(k)[0], resourceList.get(k)[1]};
+                        initialRun = false;
+                    }
+
+                    // Checks if the job is capable of fitting on the specific server.
+                    if ((Integer.parseInt(resourceList.get(k)[4]) >= Integer.parseInt(jobN[4])) &&
+                            (Integer.parseInt(resourceList.get(k)[5]) >= Integer.parseInt(jobN[5]))&&
+                            (Integer.parseInt(resourceList.get(k)[6]) >= Integer.parseInt(jobN[6]))){
+
+                        // Calculates the fitness value and pulls out available time for easy comparision.
+                        fitness = Integer.parseInt(resourceList.get(k)[4]) - Integer.parseInt(jobN[4]);
+                        avail = Integer.parseInt(resourceList.get(k)[3]);
+
+                        // If the server is the best fit, save the server info and update the comparators.
+                        if ((fitness < bestFit) || ((fitness == bestFit) && (avail < minAvail))){
+                            bestFit = fitness;
+                            minAvail = avail;
+                            bestFitFound = true;
+                            bestFitServer = new String[] {this.resourceList.get(k)[0], this.resourceList.get(k)[1]};
+                        }
+                    }
+                }
             }
         }
-        return backupServer;
+        // Return the best fit server or the best fit active server in that precedence.
+        if (bestFitFound){
+            return bestFitServer;
+
+        } else {
+            return bestFitActiveServer;
+
+        }
+    }
+
+
+    /**
+     * One of the main algorithm functions for the client side simulator. Returns a a server scheduling decision for a
+     * given job in the form of a String array of size two with the String at index 0 being the server type (e.g. "Small")
+     * and the String at index two being a non-negative integer (e.g. 0, 1, ... n).
+     * <p>
+     * This function will attempt to allocate the job to the the worst fit server that the job can be run on, iterating
+     * over decisions based on location in systemxml. In the event the job cannot be run on any server schedules it to
+     * be performed on the worst fit active server whose initial resources meet the requirements of the job.
+     *
+     * @param jobN a job to be scheduled in the format "JOBN submit_time job_ID est_runtime cores memory disk".
+     * @return schedulingDecision a string array that contains the server type and server index.
+     *
+     * @author Nicholas Mangano
+     */
+    private String[] worstFit(String[] jobN){
+
+        int worstFitAlt  = Integer.MIN_VALUE;
+        int worstFit  = Integer.MIN_VALUE;
+        int altFit = Integer.MIN_VALUE;
+
+        boolean worstFitFound = false;
+        boolean altFitFound = false;
+        boolean initialRun = true;
+
+        int fitnessAlt;
+        int fitness;
+
+        String [] worstFitServer = new String[] {"1", "1"};
+        String [] altFitServer = new String[] {"2", "2"};
+        String [] worstFitActiveServer = new String[] {"3", "3"};
+
+        for (int i = 0; i < systemXML.size(); i++){
+            initialRun = true;
+
+            // Checks if the job is capable of fitting on the server type assuming it has no other jobs running to pre
+            // check what server types the job can fit onto to reduce calls to the server for resource information.
+            if ((Integer.parseInt(systemXML.get(i)[4]) >= Integer.parseInt(jobN[4])) &&
+                    (Integer.parseInt(systemXML.get(i)[5]) >= Integer.parseInt(jobN[5]))&&
+                    (Integer.parseInt(systemXML.get(i)[6]) >= Integer.parseInt(jobN[6]))){
+
+                // Sends a message to the server for the resource information for the given server size and creates an
+                // array list of string arrays with each item in the array list being one server of type the queried
+                // type.
+                this.resourceList = createDataStruct("RESC Type " + systemXML.get(i)[0]);
+
+                // Iterates over the resource list to attempt to fit the job onto a server.
+                for (int k = 0; k < this.resourceList.size(); k++){
+
+                    // Determines the worst fit active server in the event that we cannot fit the job on another server.
+                    fitnessAlt = Integer.parseInt(systemXML.get(i)[4]) - Integer.parseInt(jobN[4]);
+                    if (initialRun && (Integer.parseInt(resourceList.get(k)[2]) == 3) && (fitnessAlt > worstFitAlt)) {
+                        worstFitAlt = fitnessAlt;
+                        worstFitActiveServer = new String[]{resourceList.get(k)[0], resourceList.get(k)[1]};
+                        initialRun = false;
+                    }
+
+                    // Checks if the job is capable of fitting on the specific server.
+                    if ((Integer.parseInt(resourceList.get(k)[4]) >= Integer.parseInt(jobN[4])) &&
+                            (Integer.parseInt(resourceList.get(k)[5]) >= Integer.parseInt(jobN[5]))&&
+                            (Integer.parseInt(resourceList.get(k)[6]) >= Integer.parseInt(jobN[6]))) {
+
+                        //Filters out servers that are booting from the server lists.
+                        if (Integer.parseInt(resourceList.get(k)[2]) != 1 ||
+                                Integer.parseInt(resourceList.get(k)[2]) != 1) {
+
+                            // Calculates the fitness value.
+                            fitness = Integer.parseInt(resourceList.get(k)[4]) - Integer.parseInt(jobN[4]);
+
+                            // If the server is the worst fit or the alt fit, save the server info and update the
+                            // comparators.
+                            if ((fitness > worstFit) &&
+                                    ((Integer.parseInt(resourceList.get(k)[3]) == (Integer.parseInt(jobN[1])) ||
+                                            (Integer.parseInt(resourceList.get(k)[3]) == -1)))) {
+                                worstFit = fitness;
+                                worstFitFound = true;
+                                worstFitServer = new String[]{this.resourceList.get(k)[0], this.resourceList.get(k)[1]};
+                            } else if ((fitness > altFit) && (Integer.parseInt(resourceList.get(k)[2]) < 3)) {
+                                altFit = fitness;
+                                altFitFound = true;
+                                altFitServer = new String[]{this.resourceList.get(k)[0], this.resourceList.get(k)[1]};
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Return the worst fit server, the alt fit server or the worst fit active server in that precedence.
+        if (worstFitFound){
+            return worstFitServer;
+
+        } else if (altFitFound){
+            return altFitServer;
+
+        } else {
+            return worstFitActiveServer;
+
+        }
     }
 }
