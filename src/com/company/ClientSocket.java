@@ -233,13 +233,14 @@ public class ClientSocket {
     	boolean altFound = false;
     	
     	String[] backupServer = new String[] {"", ""};
+    	String[] secondServer = new String[] {"", ""};
     	
     	this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
 
 		if (resourceList.size() > 0) {
 			for (int i = 0; i < this.resourceList.size(); i++) {
 									
-				fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+				fitness =  Integer.parseInt(resourceList.get(i)[4]) - Integer.parseInt(jobN[4]);
 
 				if ((fitness > worstFit) && (Integer.parseInt(resourceList.get(i)[3]) >= Integer.parseInt(jobN[1]))) {
 					worstFit = fitness;
@@ -249,7 +250,7 @@ public class ClientSocket {
 				else if ((fitness > altFit) && (Integer.parseInt(resourceList.get(i)[2]) < 4)) { //where < 4 refers to a servers state being anything but unavailable
 					altFit = fitness;
 					altFound = true;
-					backupServer = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
+					secondServer = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
 				}
 			}
     	}
@@ -257,7 +258,7 @@ public class ClientSocket {
 		if (worstFound) {
     		return backupServer;
     	} else if (altFound) {
-    		return backupServer;
+    		return secondServer;
     	} else {
     		return backupServer;
     	}
