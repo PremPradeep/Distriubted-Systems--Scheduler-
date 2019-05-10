@@ -234,37 +234,24 @@ public class ClientSocket {
     	
     	String[] backupServer = new String[] {"", ""};
     	
-    	//Iterates over the server types in the order they appear in the XML file
-    	for (int i = 0; i < systemXML.size(); i++) {
-			//Iterates over resource list to calculate fitness value		  		
-    		for (int j = 0; j < Integer.parseInt(systemXML.get(i)[1]); j++) {
-				
-//				backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
+    	this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
 
-				this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
-				
-    			//Checks if current server has enough resources 	
-    			if ((Integer.parseInt(resourceList.get(j)[4]) >= Integer.parseInt(jobN[4])) && //[4] is the number of cores on a server
-                        (Integer.parseInt(resourceList.get(j)[5]) >= Integer.parseInt(jobN[5])) && //[5] is the available memory on a server
-                        (Integer.parseInt(resourceList.get(j)[6]) >= Integer.parseInt(jobN[6]))) { //[6] is the available disk space on a server
-    				    				
-    				fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
+		if (resourceList.size() > 0) {
+			for (int i = 0; i < this.resourceList.size(); i++) {
+									
+				fitness = Integer.parseInt(jobN[4]) - Integer.parseInt(resourceList.get(i)[4]);
 
-    				if ((fitness > worstFit) && (Integer.parseInt(resourceList.get(j)[3]) <= Integer.parseInt(jobN[3]))) {
-    					worstFit = fitness;
-    					worstFound = true;
-    					System.out.println("resourcelist(j)[0] " + resourceList.get(j)[0]);
-    					System.out.println("resourcelist(j)[1] " + resourceList.get(j)[1]);
-    					backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
-        			} 
-        			else if ((fitness > altFit) && (Integer.parseInt(resourceList.get(j)[3]) <= Integer.parseInt(jobN[3]))) {
-        				altFit = fitness;
-        				altFound = true;
-        				System.out.println("altfit");
-    					backupServer = new String[] {resourceList.get(j)[0], resourceList.get(j)[1]};
-        			}
-    			}
-    		}
+				if ((fitness > worstFit) && (Integer.parseInt(resourceList.get(i)[3]) >= Integer.parseInt(jobN[1]))) {
+					worstFit = fitness;
+					worstFound = true;
+					backupServer = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
+				} 
+				else if ((fitness > altFit) && (Integer.parseInt(resourceList.get(i)[2]) < 4)) { //where < 4 refers to a servers state being anything but unavailable
+					altFit = fitness;
+					altFound = true;
+					backupServer = new String[] {resourceList.get(i)[0], resourceList.get(i)[1]};
+				}
+			}
     	}
     	
 		if (worstFound) {
