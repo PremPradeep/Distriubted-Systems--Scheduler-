@@ -9,6 +9,8 @@ import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+
 
 // Class for implementing the client side communication for the project.
 public class ClientSocket {
@@ -22,6 +24,8 @@ public class ClientSocket {
     // Data structures
     private ArrayList<String[]> resourceList;
     private ArrayList<String[]> systemXML;
+    private ArrayList<String[]> backupList;
+
 
     // Java Socket communication object.
     private Socket client;
@@ -90,7 +94,7 @@ public class ClientSocket {
         // Initial authentication protocol
         this.sendMessage("HELO");
         if (this.readMessage().equals("OK")) {
-            this.sendMessage("AUTH Group2");
+            this.sendMessage("AUTH PREM");
 
             // Parses the system.xml into a data structure to allow for identification of server resources.
             this.readXML();
@@ -130,8 +134,11 @@ public class ClientSocket {
                         this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         break;
 
-                    case "ff":
-                        //First fit code goes here
+                    case "nf":
+                        serverAllocation = newFit(jobInfo);
+                        if (!serverAllocation[0].equals("NONE")) {
+                            this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
+                        }
                         break;
 
                     case "bf":
@@ -139,10 +146,6 @@ public class ClientSocket {
                         if (!serverAllocation[0].equals("NONE")) {
                             this.sendMessage("SCHD " + jobInfo[2] + " " + serverAllocation[0] + " " + serverAllocation[1]);
                         }
-                        break;
-
-                    case "wf":
-                        //worst fit code goes here
                         break;
 
                 }
@@ -299,6 +302,61 @@ public class ClientSocket {
         } else {
             return backupserver;
         }
+
+    }
+
+    private String[] newFit(String[] jobN) {
+
+
+        this.resourceList = createDataStruct("RESC Avail " + jobN[4] + " " + jobN[5] + " " + jobN[6]);
+        String[] backupserver = new String[]{"", ""};
+        int currentSize = 0;
+        int minTime = Integer.MAX_VALUE;
+
+        for (int i = 0; i < systemXML.size(); i++) {
+            if (Integer.parseInt(systemXML.get(i)[4]) > currentSize) {
+                currentSize = Integer.parseInt(systemXML.get(i)[4]);
+                this.backupList = createDataStruct("RESC Type " + systemXML.get(i)[0]);
+            }
+        }
+
+        Collections.sort(this.resourceList, new Comparator<String[]>() {
+            public int compare(String[] string, String[] otherString) {
+                return Integer.parseInt(string[4]) - Integer.parseInt(otherString[4]);
+            }
+        });
+
+
+        if (resourceList.size() > 0) {
+
+
+            for (int i = 0; i < resourceList.size(); i++) {
+
+                if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) && //enough rsc
+                        (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
+                        (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+
+                    backupserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
+
+
+
+
+                }
+            }
+
+        } else {
+
+            for (int j = 0; j < this.backupList.size(); j++) {
+
+                if ((Integer.parseInt(backupList.get(j)[3]) < minTime)) {
+
+                    minTime = Integer.parseInt(backupList.get(j)[3]);
+                    backupserver = new String[]{backupList.get(j)[0], backupList.get(j)[1]};
+                }
+            }
+        }
+
+        return backupserver;
 
     }
 }
