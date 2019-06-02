@@ -334,10 +334,11 @@ public class ClientSocket {
 
                 if ((Integer.parseInt(resourceList.get(i)[4]) >= Integer.parseInt(jobN[4])) && //enough rsc
                         (Integer.parseInt(resourceList.get(i)[5]) >= Integer.parseInt(jobN[5])) &&
-                        (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6]))) {
+                        (Integer.parseInt(resourceList.get(i)[6]) >= Integer.parseInt(jobN[6])) &&
+                        (Integer.parseInt(resourceList.get(i)[3]) < minTime)  ) {
 
                     backupserver = new String[]{resourceList.get(i)[0], resourceList.get(i)[1]};
-
+                    minTime = Integer.parseInt(resourceList.get(i)[3]);
 
 
 
@@ -359,5 +360,10 @@ public class ClientSocket {
         return backupserver;
 
     }
-}
+
+
+
+
+
+    }
 
